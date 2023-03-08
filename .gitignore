@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+BEHRINGER_UMC_Driver-V5.51.0.zip
+media/
+mpv/

@@ -3,6 +3,14 @@
 import subprocess
 import os
 import sys
+import json
+from time import sleep
+
+def readConfig(configFile):
+    settingsFile = os.path.join(cwd, configFile)
+    with open(settingsFile) as json_file:
+        data = json.load(json_file)
+    return data
 
 def find_all(a_str, sub):
     start = 0
@@ -25,7 +33,18 @@ if getattr(sys, 'frozen', False):
     cwd = os.path.dirname(sys.executable)
 else:
     cwd = os.path.dirname(this_file)
-mpvPlayer = cwd + "\mpv"
+
+# Read Config File
+config = readConfig("config.json")
+mpvPlayer = cwd + config["mpvPlayer"]
+video = cwd + config["video"]
+audios = config["audios"]
+channels = config["channels"]
+
+for i in range(len(audios)):
+    audios[i] = cwd + audios[i]
+
+# Get device list to specify output channels
 str = subprocess.check_output([mpvPlayer, "--audio-device=help"]).decode("utf-8")
 device = ""
 deviceList = []
@@ -38,16 +57,15 @@ for i in str:
     
 #print (deviceList)
 wasapi = []
-for new in deviceList:
-    if "OUT 1-2 (" in new:
-        getDevice = list(find_all(new, "'"))
-        wasapi.append(new[getDevice[0]+1: getDevice[1]])
-    if "OUT 3-4 (" in new:
-        getDevice = list(find_all(new, "'"))
-        wasapi.append(new[getDevice[0]+1: getDevice[1]])
-print(wasapi)
 i = 0
-for audioDevice in wasapi:
-    subprocess.Popen([mpvPlayer, f"--audio-device={audioDevice}", "--loop", audioFiles[i]])
-    i =+ 1
-    
+for new in deviceList:
+    if channels[i] in new:
+        getDevice = list(find_all(new, "'"))
+        subprocess.Popen([mpvPlayer, f"--audio-device={new[getDevice[0]+1: getDevice[1]]}", "--loop-playlist", audios[i]])
+        print(f"playing audio {i}")
+        i =+ 1
+#sleep(1)
+#play video in loop
+subprocess.Popen([mpvPlayer, "--loop-playlist", "--fullscreen", "--no-osc", "--ontop", video], stdin=subprocess.PIPE)
+
+print("playing video")
